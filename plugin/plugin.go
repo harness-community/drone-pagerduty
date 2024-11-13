@@ -69,7 +69,7 @@ func Exec(ctx context.Context, args Args) error {
 			logger.WithError(err).Error("Failed to create change event")
 			return errors.New("failed to create change event")
 		}
-
+		logger.Info("Change event created Successfully")
 		return nil
 	}
 
