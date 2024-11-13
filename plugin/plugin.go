@@ -47,9 +47,18 @@ func Exec(ctx context.Context, args Args) error {
 	if args.IncidentSummary == "" {
 		return errors.New("incidentSummary is required")
 	}
-	if args.DedupKey == "" && args.Resolve {
-		return errors.New("dedupKey is required for resolving an incident")
+	if args.IncidentSource == "" {
+		return errors.New("incidentSource is required")
 	}
+	if !args.CreateChangeEvent {
+		if args.DedupKey == "" {
+			return errors.New("dedupKey is required when not creating a change event")
+		}
+		if args.JobStatus == "" {
+			return errors.New("jobStatus is required when not creating a change event")
+		}
+	}
+
 	if args.JobStatus == "" {
 		logger.Warn("Job status is empty")
 	}
@@ -60,11 +69,8 @@ func Exec(ctx context.Context, args Args) error {
 			logger.WithError(err).Error("Failed to create change event")
 			return errors.New("failed to create change event")
 		}
-		// If job status is empty, skip further incident processing
-		if args.JobStatus == "" {
-			logger.Warn("Skipping incident logic as job status is empty")
-			return nil
-		}
+
+		return nil
 	}
 
 	// Handle job status and decide whether to trigger or resolve incidents
