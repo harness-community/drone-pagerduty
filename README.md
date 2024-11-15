@@ -51,6 +51,8 @@ docker run --rm \
 - PLUGIN_ROUTING_KEY: The integration key for PagerDuty to route the event.
 - PLUGIN_INCIDENT_SUMMARY: A summary of the incident being triggered.
 - PLUGIN_INCIDENT_SOURCE: The source of the incident.
+- PLUGIN_CREATE_CHANGE_EVENT: set to true to create change event
+- PLUGIN_CUSTOM_DETAILS: Provide custom details for change event
 - PLUGIN_INCIDENT_SEVERITY: Severity level (e.g., "critical").
 - PLUGIN_DEDUP_KEY: Deduplication key for identifying and resolving incidents (optional).
 - PLUGIN_RESOLVE: Set to true to resolve an incident or false to trigger.
