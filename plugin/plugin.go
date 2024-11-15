@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/PagerDuty/go-pagerduty"
@@ -19,6 +20,8 @@ type Args struct {
 	CreateChangeEvent bool   `envconfig:"PLUGIN_CREATE_CHANGE_EVENT"`
 	Resolve           bool   `envconfig:"PLUGIN_RESOLVE"`
 	JobStatus         string `envconfig:"PLUGIN_JOB_STATUS"`
+	CustomDetailsStr  string `envconfig:"PLUGIN_CUSTOM_DETAILS"` // Intermediate string to receive JSON
+	CustomDetails     map[string]interface{}
 }
 
 // PagerDutyClient defines the methods used from the PagerDuty API.
@@ -159,12 +162,21 @@ func resolveIncidentAction(ctx context.Context, client PagerDutyClient, args Arg
 
 // createChangeEvent creates a change event in PagerDuty.
 func createChangeEvent(ctx context.Context, client PagerDutyClient, args Args) error {
+	if args.CustomDetailsStr != "" {
+		var customDetailsMap map[string]interface{}
+		err := json.Unmarshal([]byte(args.CustomDetailsStr), &customDetailsMap)
+		if err != nil {
+			return nil
+		}
+		args.CustomDetails = customDetailsMap
+	}
+
 	event := pagerduty.ChangeEvent{
 		RoutingKey: args.RoutingKey,
 		Payload: pagerduty.ChangeEventPayload{
 			Summary:       args.IncidentSummary,
 			Source:        args.IncidentSource,
-			CustomDetails: map[string]interface{}{"job_status": args.JobStatus},
+			CustomDetails: args.CustomDetails,
 		},
 	}
 
