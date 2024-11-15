@@ -18,15 +18,27 @@ docker build -t plugins/pagerduty -f docker/Dockerfile .
 
 Execute the plugin from your current working directory:
 
-```text
+## Pager Duty change event Env variables
+```
+docker run --rm \
+  -e PLUGIN_ROUTING_KEY="your_routing_key_here" \
+  -e PLUGIN_INCIDENT_SUMMARY="Incident summary here" \
+  -e PLUGIN_INCIDENT_SOURCE="Incident source here" \
+  -e PLUGIN_CREATE_CHANGE_EVENT=true \
+  -e PLUGIN_CUSTOM_DETAILS="{\"build_state\": \"passed\", \"build_number\": \"2\", \"run_time\": \"1236s\"}" \
+  -w /drone/src \
+  -v $(pwd):/drone/src \
+  plugins/pagerduty
+```
+
+## Pager Duty Env variables
+```
 docker run --rm \
   -e PLUGIN_ROUTING_KEY="your_routing_key_here" \
   -e PLUGIN_INCIDENT_SUMMARY="Incident summary here" \
   -e PLUGIN_INCIDENT_SOURCE="Incident source here" \
   -e PLUGIN_INCIDENT_SEVERITY="info" \
   -e PLUGIN_DEDUP_KEY="your_dedup_key_here" \
-  -e PLUGIN_CREATE_CHANGE_EVENT=true \
-  -e PLUGIN_CUSTOM_DETAILS="{\"build_state\": \"passed\", \"build_number\": \"2\", \"run_time\": \"1236s\"}" \
   -e PLUGIN_RESOLVE=true \
   -e PLUGIN_JOB_STATUS="success" \
   -w /drone/src \
