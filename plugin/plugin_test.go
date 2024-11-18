@@ -1,11 +1,8 @@
-// Copyright 2020 the Drone Authors. All rights reserved.
-// Use of this source code is governed by the Blue Oak Model License
-// that can be found in the LICENSE file.
-
 package plugin
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/PagerDuty/go-pagerduty"
@@ -20,16 +17,24 @@ type MockPagerDutyClient struct {
 
 func (m *MockPagerDutyClient) ManageEventWithContext(ctx context.Context, event *pagerduty.V2Event) (*pagerduty.V2EventResponse, error) {
 	args := m.Called(ctx, event)
-	return args.Get(0).(*pagerduty.V2EventResponse), args.Error(1)
+	response, ok := args.Get(0).(*pagerduty.V2EventResponse)
+	if !ok && args.Get(0) != nil {
+		panic("interface conversion failed")
+	}
+	return response, args.Error(1)
 }
 
 func (m *MockPagerDutyClient) CreateChangeEventWithContext(ctx context.Context, event pagerduty.ChangeEvent) (*pagerduty.ChangeEventResponse, error) {
 	args := m.Called(ctx, event)
-	return args.Get(0).(*pagerduty.ChangeEventResponse), args.Error(1)
+	response, ok := args.Get(0).(*pagerduty.ChangeEventResponse)
+	if !ok && args.Get(0) != nil {
+		panic("interface conversion failed")
+	}
+	return response, args.Error(1)
 }
 
-// TestTriggerIncident tests the triggerIncident function.
-func TestTriggerIncident(t *testing.T) {
+// TestExec tests the Exec function.
+func TestExec(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
 	ctx := context.Background()
 	args := Args{
@@ -38,13 +43,15 @@ func TestTriggerIncident(t *testing.T) {
 		IncidentSource:   "Test source",
 		IncidentSeverity: "critical",
 		DedupKey:         "testDedupKey",
+		JobStatus:        "failure",
 	}
 
+	// Set up expected event for failure scenario.
 	event := &pagerduty.V2Event{
 		RoutingKey: args.RoutingKey,
 		Action:     "trigger",
 		Payload: &pagerduty.V2Payload{
-			Summary:  args.IncidentSummary,
+			Summary:  "Job failed: " + args.IncidentSummary,
 			Source:   args.IncidentSource,
 			Severity: args.IncidentSeverity,
 		},
@@ -53,20 +60,55 @@ func TestTriggerIncident(t *testing.T) {
 
 	mockClient.On("ManageEventWithContext", ctx, event).Return(&pagerduty.V2EventResponse{}, nil)
 
-	err := triggerIncident(ctx, mockClient, args)
+	err := Exec(ctx, mockClient, args)
 	require.NoError(t, err)
 	mockClient.AssertExpectations(t)
 }
 
-// TestResolveIncidentAction tests the resolveIncidentAction function.
-func TestResolveIncidentAction(t *testing.T) {
+// TestExecCreateChangeEvent tests the Exec function with CreateChangeEvent.
+func TestExecCreateChangeEvent(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
 	ctx := context.Background()
 	args := Args{
-		RoutingKey: "testRoutingKey",
-		DedupKey:   "testDedupKey",
+		RoutingKey:        "testRoutingKey",
+		IncidentSummary:   "Test change event summary",
+		IncidentSource:    "Test source",
+		CreateChangeEvent: true,
+		CustomDetailsStr:  "{\"key1\": \"value1\"}",
 	}
 
+	// Set up expected change event.
+	customDetailsMap := map[string]interface{}{"key1": "value1"}
+	event := pagerduty.ChangeEvent{
+		RoutingKey: args.RoutingKey,
+		Payload: pagerduty.ChangeEventPayload{
+			Summary:       args.IncidentSummary,
+			Source:        args.IncidentSource,
+			CustomDetails: customDetailsMap,
+		},
+	}
+
+	mockClient.On("CreateChangeEventWithContext", ctx, event).Return(&pagerduty.ChangeEventResponse{}, nil)
+
+	err := Exec(ctx, mockClient, args)
+	require.NoError(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+// TestExecResolveIncidentAction tests the Exec function with Resolve set to true.
+func TestExecResolveIncidentAction(t *testing.T) {
+	mockClient := new(MockPagerDutyClient)
+	ctx := context.Background()
+	args := Args{
+		RoutingKey:      "testRoutingKey",
+		IncidentSummary: "Test resolve summary",
+		IncidentSource:  "Test source",
+		DedupKey:        "testDedupKey",
+		Resolve:         true,
+		JobStatus:       "success",
+	}
+
+	// Set up expected resolve event.
 	event := &pagerduty.V2Event{
 		RoutingKey: args.RoutingKey,
 		Action:     "resolve",
@@ -75,34 +117,71 @@ func TestResolveIncidentAction(t *testing.T) {
 
 	mockClient.On("ManageEventWithContext", ctx, event).Return(&pagerduty.V2EventResponse{}, nil)
 
-	err := resolveIncidentAction(ctx, mockClient, args)
+	err := Exec(ctx, mockClient, args)
 	require.NoError(t, err)
 	mockClient.AssertExpectations(t)
 }
 
-// TestCreateChangeEvent tests the createChangeEvent function.
-func TestCreateChangeEvent(t *testing.T) {
+// TestExecMissingRoutingKey tests the Exec function with a missing RoutingKey.
+func TestExecMissingRoutingKey(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
 	ctx := context.Background()
 	args := Args{
-		RoutingKey:      "testRoutingKey",
-		IncidentSummary: "Test change event summary",
-		IncidentSource:  "Test source",
-		JobStatus:       "success",
+		IncidentSummary:  "Test incident summary",
+		IncidentSource:   "Test source",
+		IncidentSeverity: "critical",
+		DedupKey:         "testDedupKey",
+		JobStatus:        "failure",
 	}
 
-	event := pagerduty.ChangeEvent{
+	err := Exec(ctx, mockClient, args)
+	require.EqualError(t, err, "routingKey is required")
+}
+
+// TestExecAPICallFailure tests the Exec function with an API call failure.
+func TestExecAPICallFailure(t *testing.T) {
+	mockClient := new(MockPagerDutyClient)
+	ctx := context.Background()
+	args := Args{
+		RoutingKey:       "testRoutingKey",
+		IncidentSummary:  "Test incident summary",
+		IncidentSource:   "Test source",
+		IncidentSeverity: "critical",
+		DedupKey:         "testDedupKey",
+		JobStatus:        "failure",
+	}
+
+	// Set up expected event for failure scenario.
+	event := &pagerduty.V2Event{
 		RoutingKey: args.RoutingKey,
-		Payload: pagerduty.ChangeEventPayload{
-			Summary:       args.IncidentSummary,
-			Source:        args.IncidentSource,
-			CustomDetails: map[string]interface{}{"job_status": args.JobStatus},
+		Action:     "trigger",
+		Payload: &pagerduty.V2Payload{
+			Summary:  "Job failed: " + args.IncidentSummary,
+			Source:   args.IncidentSource,
+			Severity: args.IncidentSeverity,
 		},
+		DedupKey: args.DedupKey,
 	}
 
-	mockClient.On("CreateChangeEventWithContext", ctx, event).Return(&pagerduty.ChangeEventResponse{}, nil)
+	mockClient.On("ManageEventWithContext", ctx, event).Return(nil, errors.New("API call failed"))
 
-	err := createChangeEvent(ctx, mockClient, args)
-	require.NoError(t, err)
+	err := Exec(ctx, mockClient, args)
+	require.EqualError(t, err, "failed to trigger incident")
 	mockClient.AssertExpectations(t)
+}
+
+// TestExecInvalidCustomDetails tests the Exec function with invalid CustomDetailsStr.
+func TestExecInvalidCustomDetails(t *testing.T) {
+	mockClient := new(MockPagerDutyClient)
+	ctx := context.Background()
+	args := Args{
+		RoutingKey:        "testRoutingKey",
+		IncidentSummary:   "Test change event summary",
+		IncidentSource:    "Test source",
+		CreateChangeEvent: true,
+		CustomDetailsStr:  "invalid-json",
+	}
+
+	err := Exec(ctx, mockClient, args)
+	require.EqualError(t, err, "failed to create change event")
 }

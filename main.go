@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 
+	"github.com/PagerDuty/go-pagerduty"
 	"github.com/drone/drone-pagerduty/plugin"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
@@ -29,7 +30,9 @@ func main() {
 		logrus.SetLevel(logrus.TraceLevel)
 	}
 
-	if err := plugin.Exec(context.Background(), args); err != nil {
+	client := pagerduty.NewClient(args.RoutingKey)
+
+	if err := plugin.Exec(context.Background(), client, args); err != nil {
 		logrus.Fatalln(err)
 	}
 }

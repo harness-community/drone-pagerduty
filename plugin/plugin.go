@@ -9,6 +9,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Severity levels as constants for reuse and readability.
+const (
+	SeverityCritical = "critical"
+	SeverityWarning  = "warning"
+	SeverityInfo     = "info"
+)
+
 // Args provides plugin execution arguments.
 type Args struct {
 	Level             string `envconfig:"PLUGIN_LOG_LEVEL"`
@@ -31,15 +38,15 @@ type PagerDutyClient interface {
 }
 
 // Exec executes the plugin.
-func Exec(ctx context.Context, args Args) error {
-	client := pagerduty.NewClient(args.RoutingKey)
-	logger := logrus.
-		WithField("PLUGIN_ROUTING_KEY", args.RoutingKey).
-		WithField("PLUGIN_INCIDENT_SUMMARY", args.IncidentSummary).
-		WithField("PLUGIN_INCIDENT_SOURCE", args.IncidentSource).
-		WithField("PLUGIN_INCIDENT_SEVERITY", args.IncidentSeverity).
-		WithField("PLUGIN_CREATE_CHANGE_EVENT", args.CreateChangeEvent).
-		WithField("PLUGIN_JOB_STATUS", args.JobStatus)
+func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"PLUGIN_ROUTING_KEY":         args.RoutingKey,
+		"PLUGIN_INCIDENT_SUMMARY":    args.IncidentSummary,
+		"PLUGIN_INCIDENT_SOURCE":     args.IncidentSource,
+		"PLUGIN_INCIDENT_SEVERITY":   args.IncidentSeverity,
+		"PLUGIN_CREATE_CHANGE_EVENT": args.CreateChangeEvent,
+		"PLUGIN_JOB_STATUS":          args.JobStatus,
+	})
 
 	logger.Info("Starting plugin execution")
 
@@ -78,7 +85,6 @@ func Exec(ctx context.Context, args Args) error {
 
 	// Handle job status and decide whether to trigger or resolve incidents
 	var resolveIncident bool
-	var severity = args.IncidentSeverity
 	var summary = args.IncidentSummary
 
 	switch args.JobStatus {
@@ -88,17 +94,14 @@ func Exec(ctx context.Context, args Args) error {
 		logger.Info("Job succeeded, deciding on resolving incident")
 	case "failure":
 		resolveIncident = false
-		severity = "critical"
 		summary = "Job failed: " + summary
 		logger.Info("Job failed, deciding on triggering or resolving incident")
 	case "unstable":
 		resolveIncident = false
-		severity = "warning"
 		summary = "Job is unstable: " + summary
 		logger.Info("Job is unstable, deciding on triggering or resolving incident")
 	case "aborted":
 		resolveIncident = false
-		severity = "warning"
 		summary = "Job was aborted: " + summary
 		logger.Info("Job was aborted, deciding on triggering or resolving incident")
 	default:
@@ -106,7 +109,6 @@ func Exec(ctx context.Context, args Args) error {
 		return nil
 	}
 
-	args.IncidentSeverity = severity
 	args.IncidentSummary = summary
 
 	if resolveIncident {
@@ -115,7 +117,7 @@ func Exec(ctx context.Context, args Args) error {
 			return errors.New("failed to resolve incident")
 		}
 	} else {
-		if err := triggerIncident(ctx, client, args); err != nil {
+		if err := triggerIncidentAction(ctx, client, args); err != nil {
 			logger.WithError(err).Error("Failed to trigger incident")
 			return errors.New("failed to trigger incident")
 		}
@@ -126,7 +128,7 @@ func Exec(ctx context.Context, args Args) error {
 }
 
 // triggerIncident triggers an incident in PagerDuty.
-func triggerIncident(ctx context.Context, client PagerDutyClient, args Args) error {
+func triggerIncidentAction(ctx context.Context, client PagerDutyClient, args Args) error {
 	event := &pagerduty.V2Event{
 		RoutingKey: args.RoutingKey,
 		Action:     "trigger",
@@ -166,7 +168,7 @@ func createChangeEvent(ctx context.Context, client PagerDutyClient, args Args) e
 		var customDetailsMap map[string]interface{}
 		err := json.Unmarshal([]byte(args.CustomDetailsStr), &customDetailsMap)
 		if err != nil {
-			return nil
+			return errors.New("failed to parse custom details JSON: " + err.Error())
 		}
 		args.CustomDetails = customDetailsMap
 	}
