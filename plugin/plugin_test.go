@@ -184,7 +184,7 @@ func TestExecInvalidCustomDetails(t *testing.T) {
 	}
 
 	err := Exec(ctx, mockClient, args)
-	require.EqualError(t, err, "invalid severity value; allowed values are 'critical', 'error', 'warning', 'info', 'unknown'")
+	require.EqualError(t, err, "failed to create change event")
 }
 
 // TestExecInvalidSeverity tests the Exec function with an invalid severity value.
