@@ -53,7 +53,7 @@ docker run --rm \
 - PLUGIN_INCIDENT_SOURCE: The source of the incident.
 - PLUGIN_CREATE_CHANGE_EVENT: set to true to create change event
 - PLUGIN_CUSTOM_DETAILS: Provide custom details for change event
-- PLUGIN_INCIDENT_SEVERITY: Severity level (e.g., "critical").
+- PLUGIN_INCIDENT_SEVERITY: Severity level specifies the severity level of the incident, e.g., 'critical', 'error', 'warning', 'info', 'unknown'.
 - PLUGIN_DEDUP_KEY: Deduplication key for identifying and resolving incidents (optional).
 - PLUGIN_RESOLVE: Set to true to resolve an incident or false to trigger.
 - PLUGIN_CREATE_CHANGE_EVENT: Set to true to create a change event.

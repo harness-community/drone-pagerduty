@@ -19,7 +19,7 @@ func (m *MockPagerDutyClient) ManageEventWithContext(ctx context.Context, event 
 	args := m.Called(ctx, event)
 	response, ok := args.Get(0).(*pagerduty.V2EventResponse)
 	if !ok && args.Get(0) != nil {
-		panic("interface conversion failed")
+		return nil, errors.New("failed to convert interface to *pagerduty.V2EventResponse")
 	}
 	return response, args.Error(1)
 }
@@ -28,7 +28,7 @@ func (m *MockPagerDutyClient) CreateChangeEventWithContext(ctx context.Context, 
 	args := m.Called(ctx, event)
 	response, ok := args.Get(0).(*pagerduty.ChangeEventResponse)
 	if !ok && args.Get(0) != nil {
-		panic("interface conversion failed")
+		return nil, errors.New("failed to convert interface to *pagerduty.ChangeEventResponse")
 	}
 	return response, args.Error(1)
 }
@@ -100,12 +100,13 @@ func TestExecResolveIncidentAction(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
 	ctx := context.Background()
 	args := Args{
-		RoutingKey:      "testRoutingKey",
-		IncidentSummary: "Test resolve summary",
-		IncidentSource:  "Test source",
-		DedupKey:        "testDedupKey",
-		Resolve:         true,
-		JobStatus:       "success",
+		RoutingKey:       "testRoutingKey",
+		IncidentSummary:  "Test resolve summary",
+		IncidentSource:   "Test source",
+		DedupKey:         "testDedupKey",
+		Resolve:          true,
+		JobStatus:        "success",
+		IncidentSeverity: "info",
 	}
 
 	// Set up expected resolve event.
@@ -135,7 +136,7 @@ func TestExecMissingRoutingKey(t *testing.T) {
 	}
 
 	err := Exec(ctx, mockClient, args)
-	require.EqualError(t, err, "routingKey is required")
+	require.EqualError(t, err, "missing required parameter: routingKey")
 }
 
 // TestExecAPICallFailure tests the Exec function with an API call failure.
@@ -183,5 +184,22 @@ func TestExecInvalidCustomDetails(t *testing.T) {
 	}
 
 	err := Exec(ctx, mockClient, args)
-	require.EqualError(t, err, "failed to create change event")
+	require.EqualError(t, err, "invalid severity value; allowed values are 'critical', 'error', 'warning', 'info', 'unknown'")
+}
+
+// TestExecInvalidSeverity tests the Exec function with an invalid severity value.
+func TestExecInvalidSeverity(t *testing.T) {
+	mockClient := new(MockPagerDutyClient)
+	ctx := context.Background()
+	args := Args{
+		RoutingKey:       "testRoutingKey",
+		IncidentSummary:  "Test incident summary",
+		IncidentSource:   "Test source",
+		IncidentSeverity: "invalid-severity",
+		DedupKey:         "testDedupKey",
+		JobStatus:        "failure",
+	}
+
+	err := Exec(ctx, mockClient, args)
+	require.EqualError(t, err, "invalid severity value; allowed values are 'critical', 'error', 'warning', 'info', 'unknown'")
 }

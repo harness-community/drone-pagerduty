@@ -12,8 +12,10 @@ import (
 // Severity levels as constants for reuse and readability.
 const (
 	SeverityCritical = "critical"
+	SeverityError    = "error"
 	SeverityWarning  = "warning"
 	SeverityInfo     = "info"
+	SeverityUnknown  = "unknown"
 )
 
 // Args provides plugin execution arguments.
@@ -37,6 +39,16 @@ type PagerDutyClient interface {
 	CreateChangeEventWithContext(ctx context.Context, event pagerduty.ChangeEvent) (*pagerduty.ChangeEventResponse, error)
 }
 
+// validateSeverity validates PagerDuty's allowed severity values.
+func validateSeverity(severity string) error {
+	switch severity {
+	case SeverityCritical, SeverityError, SeverityWarning, SeverityInfo, SeverityUnknown:
+		return nil
+	default:
+		return errors.New("invalid severity value; allowed values are 'critical', 'error', 'warning', 'info', 'unknown'")
+	}
+}
+
 // Exec executes the plugin.
 func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 	logger := logrus.WithFields(logrus.Fields{
@@ -52,25 +64,32 @@ func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 
 	// Validate required fields
 	if args.RoutingKey == "" {
-		return errors.New("routingKey is required")
+		return errors.New("missing required parameter: routingKey")
 	}
 	if args.IncidentSummary == "" {
-		return errors.New("incidentSummary is required")
+		return errors.New("missing required parameter: incidentSummary")
 	}
 	if args.IncidentSource == "" {
-		return errors.New("incidentSource is required")
+		return errors.New("missing required parameter: incidentSource")
 	}
 	if !args.CreateChangeEvent {
 		if args.DedupKey == "" {
-			return errors.New("dedupKey is required when not creating a change event")
+			return errors.New("missing required parameter: dedupKey when not creating a change event")
 		}
 		if args.JobStatus == "" {
-			return errors.New("jobStatus is required when not creating a change event")
+			return errors.New("missing required parameter: jobStatus when not creating a change event")
+		}
+	}
+
+	// Validate severity value if not creating a change event
+	if !args.CreateChangeEvent {
+		if err := validateSeverity(args.IncidentSeverity); err != nil {
+			return err
 		}
 	}
 
 	if args.JobStatus == "" {
-		logger.Warn("Job status is empty")
+		logger.Warn("Job status is empty, no action will be taken")
 	}
 
 	if args.CreateChangeEvent {
