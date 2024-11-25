@@ -26,8 +26,7 @@ docker run --rm \
   -e PLUGIN_INCIDENT_SOURCE="Incident source here" \
   -e PLUGIN_CREATE_CHANGE_EVENT=true \
   -e PLUGIN_CUSTOM_DETAILS="{\"build_state\": \"passed\", \"build_number\": \"2\", \"run_time\": \"1236s\"}" \
-  -w /drone/src \
-  -v $(pwd):/drone/src \
+  -v $(pwd):$(pwd) \
   plugins/pagerduty
 ```
 
@@ -41,8 +40,7 @@ docker run --rm \
   -e PLUGIN_DEDUP_KEY="your_dedup_key_here" \
   -e PLUGIN_RESOLVE=true \
   -e PLUGIN_JOB_STATUS="success" \
-  -w /drone/src \
-  -v $(pwd):/drone/src \
+  -v $(pwd):$(pwd) \
   plugins/pagerduty
 ```
 

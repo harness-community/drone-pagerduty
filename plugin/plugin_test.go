@@ -167,7 +167,7 @@ func TestExecAPICallFailure(t *testing.T) {
 	mockClient.On("ManageEventWithContext", ctx, event).Return(nil, errors.New("API call failed"))
 
 	err := Exec(ctx, mockClient, args)
-	require.EqualError(t, err, "failed to trigger incident")
+	require.EqualError(t, err, "failed to trigger incident: failed to trigger incident: API call failed")
 	mockClient.AssertExpectations(t)
 }
 
@@ -184,7 +184,7 @@ func TestExecInvalidCustomDetails(t *testing.T) {
 	}
 
 	err := Exec(ctx, mockClient, args)
-	require.EqualError(t, err, "failed to create change event")
+	require.EqualError(t, err, "failed to create change event: failed to parse custom details JSON: invalid character 'i' looking for beginning of value")
 }
 
 // TestExecInvalidSeverity tests the Exec function with an invalid severity value.
@@ -201,5 +201,26 @@ func TestExecInvalidSeverity(t *testing.T) {
 	}
 
 	err := Exec(ctx, mockClient, args)
-	require.EqualError(t, err, "invalid severity value; allowed values are 'critical', 'error', 'warning', 'info', 'unknown'")
+	require.EqualError(t, err, "invalid severity value; allowed values are 'critical', 'error', 'warning', 'info'")
+}
+
+// TestExecUnknownJobStatus tests the Exec function with an unknown JobStatus.
+func TestExecUnknownJobStatus(t *testing.T) {
+	mockClient := new(MockPagerDutyClient)
+	ctx := context.Background()
+	args := Args{
+		RoutingKey:       "testRoutingKey",
+		IncidentSummary:  "Test incident summary",
+		IncidentSource:   "Test source",
+		IncidentSeverity: "info",
+		DedupKey:         "testDedupKey",
+		JobStatus:        "unknown-status",
+	}
+
+	// No API call should be made since the job status is unknown.
+	err := Exec(ctx, mockClient, args)
+	// Plugin should gracefully handle the unknown status without errors.
+	require.NoError(t, err)
+	mockClient.AssertNotCalled(t, "ManageEventWithContext")
+	mockClient.AssertNotCalled(t, "CreateChangeEventWithContext")
 }

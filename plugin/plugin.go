@@ -15,7 +15,6 @@ const (
 	SeverityError    = "error"
 	SeverityWarning  = "warning"
 	SeverityInfo     = "info"
-	SeverityUnknown  = "unknown"
 )
 
 // Args provides plugin execution arguments.
@@ -42,10 +41,10 @@ type PagerDutyClient interface {
 // validateSeverity validates PagerDuty's allowed severity values.
 func validateSeverity(severity string) error {
 	switch severity {
-	case SeverityCritical, SeverityError, SeverityWarning, SeverityInfo, SeverityUnknown:
+	case SeverityCritical, SeverityError, SeverityWarning, SeverityInfo:
 		return nil
 	default:
-		return errors.New("invalid severity value; allowed values are 'critical', 'error', 'warning', 'info', 'unknown'")
+		return errors.New("invalid severity value; allowed values are 'critical', 'error', 'warning', 'info'")
 	}
 }
 
@@ -96,7 +95,7 @@ func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 		logger.Info("Creating change event")
 		if err := createChangeEvent(ctx, client, args); err != nil {
 			logger.WithError(err).Error("Failed to create change event")
-			return errors.New("failed to create change event")
+			return errors.New("failed to create change event: " + err.Error())
 		}
 		logger.Info("Change event created Successfully")
 		return nil
@@ -124,6 +123,7 @@ func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 		summary = "Job was aborted: " + summary
 		logger.Info("Job was aborted, deciding on triggering or resolving incident")
 	default:
+		summary = "Job status unknown: " + summary
 		logger.Warn("Unknown job status, no action taken")
 		return nil
 	}
@@ -132,13 +132,13 @@ func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 
 	if resolveIncident {
 		if err := resolveIncidentAction(ctx, client, args); err != nil {
-			logger.WithError(err).Error("Failed to resolve incident")
-			return errors.New("failed to resolve incident")
+			logger.WithError(err).Error("Failed to resolve incident: " + err.Error())
+			return errors.New("failed to resolve incident: " + err.Error())
 		}
 	} else {
 		if err := triggerIncidentAction(ctx, client, args); err != nil {
 			logger.WithError(err).Error("Failed to trigger incident")
-			return errors.New("failed to trigger incident")
+			return errors.New("failed to trigger incident: " + err.Error())
 		}
 	}
 
