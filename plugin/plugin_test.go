@@ -183,8 +183,19 @@ func TestExecInvalidCustomDetails(t *testing.T) {
 		CustomDetailsStr:  "invalid-json",
 	}
 
+	// Execute the function
 	err := Exec(ctx, mockClient, args)
-	require.EqualError(t, err, "failed to create change event: failed to parse custom details JSON: invalid character 'i' looking for beginning of value")
+
+	// Define the expected error
+	expectedErr := "failed to create change event: failed to parse custom details JSON: invalid character 'i' looking for beginning of value"
+
+	// Use require.EqualError for cleaner assertion
+	if err != nil {
+		require.EqualError(t, err, expectedErr, "Unexpected error message: got %q, expected %q", err.Error(), expectedErr)
+	} else {
+		// Handle the case where no error is returned (which is unexpected)
+		t.Errorf("Test failed: expected error but got nil. Expected: %q", expectedErr)
+	}
 }
 
 // TestExecInvalidSeverity tests the Exec function with an invalid severity value.
