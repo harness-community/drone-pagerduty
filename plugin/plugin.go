@@ -88,7 +88,8 @@ func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 	}
 
 	if args.JobStatus == "" {
-		logger.Warn("Job status is empty, no action will be taken")
+		logger.Warn("Job status is empty, exiting execution")
+		return nil
 	}
 
 	if args.CreateChangeEvent {
