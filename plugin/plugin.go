@@ -89,7 +89,6 @@ func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 
 	if args.JobStatus == "" {
 		logger.Warn("Job status is empty, exiting execution")
-		return nil
 	}
 
 	if args.CreateChangeEvent {
@@ -188,6 +187,7 @@ func createChangeEvent(ctx context.Context, client PagerDutyClient, args Args) e
 		var customDetailsMap map[string]interface{}
 		err := json.Unmarshal([]byte(args.CustomDetailsStr), &customDetailsMap)
 		if err != nil {
+			logrus.WithError(err).Error("Failed to parse custom details JSON" + err.Error())
 			return errors.New("failed to parse custom details JSON: " + err.Error())
 		}
 		args.CustomDetails = customDetailsMap

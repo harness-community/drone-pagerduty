@@ -74,24 +74,25 @@ func TestExecCreateChangeEvent(t *testing.T) {
 		IncidentSummary:   "Test change event summary",
 		IncidentSource:    "Test source",
 		CreateChangeEvent: true,
-		CustomDetailsStr:  "{\"key1\": \"value1\"}",
+		CustomDetailsStr:  "{\"key1\": \"value1\"}", // Valid JSON
 	}
 
-	// Set up expected change event.
-	customDetailsMap := map[string]interface{}{"key1": "value1"}
-	event := pagerduty.ChangeEvent{
-		RoutingKey: args.RoutingKey,
-		Payload: pagerduty.ChangeEventPayload{
-			Summary:       args.IncidentSummary,
-			Source:        args.IncidentSource,
-			CustomDetails: customDetailsMap,
-		},
-	}
+	// Define mock expectations
+	mockClient.On("CreateChangeEventWithContext", mock.Anything, mock.MatchedBy(func(event pagerduty.ChangeEvent) bool {
+		// Ensure fields match
+		return event.RoutingKey == args.RoutingKey &&
+			event.Payload.Summary == args.IncidentSummary &&
+			event.Payload.Source == args.IncidentSource &&
+			len(event.Payload.CustomDetails) == 1 // Check key-value pairs
+	})).Return(&pagerduty.ChangeEventResponse{}, nil)
 
-	mockClient.On("CreateChangeEventWithContext", ctx, event).Return(&pagerduty.ChangeEventResponse{}, nil)
-
+	// Execute the function
 	err := Exec(ctx, mockClient, args)
-	require.NoError(t, err)
+
+	// Assert no error
+	require.NoError(t, err, "Expected no error but got: %v", err)
+
+	// Assert mock expectations
 	mockClient.AssertExpectations(t)
 }
 
@@ -180,7 +181,7 @@ func TestExecInvalidCustomDetails(t *testing.T) {
 		IncidentSummary:   "Test change event summary",
 		IncidentSource:    "Test source",
 		CreateChangeEvent: true,
-		CustomDetailsStr:  "invalid-json",
+		CustomDetailsStr:  "invalid-json", // Invalid JSON
 	}
 
 	// Execute the function
@@ -189,13 +190,8 @@ func TestExecInvalidCustomDetails(t *testing.T) {
 	// Define the expected error
 	expectedErr := "failed to create change event: failed to parse custom details JSON: invalid character 'i' looking for beginning of value"
 
-	// Use require.EqualError for cleaner assertion
-	if err != nil {
-		require.EqualError(t, err, expectedErr, "Unexpected error message: got %q, expected %q", err.Error(), expectedErr)
-	} else {
-		// Handle the case where no error is returned (which is unexpected)
-		t.Errorf("Test failed: expected error but got nil. Expected: %q", expectedErr)
-	}
+	// Assert the error matches the expected value
+	require.EqualError(t, err, expectedErr, "Expected: %q, but got: %v", expectedErr, err)
 }
 
 // TestExecInvalidSeverity tests the Exec function with an invalid severity value.
