@@ -133,7 +133,7 @@ func TestExecMissingRoutingKey(t *testing.T) {
 		IncidentSource:   "Test source",
 		IncidentSeverity: "critical",
 		DedupKey:         "testDedupKey",
-		JobStatus:        "failure",
+		JobStatus:        "failed",
 	}
 
 	err := Exec(ctx, mockClient, args)
