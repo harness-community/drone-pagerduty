@@ -43,7 +43,7 @@ func TestExec(t *testing.T) {
 		IncidentSource:   "Test source",
 		IncidentSeverity: "critical",
 		DedupKey:         "testDedupKey",
-		JobStatus:        "failed",
+		JobStatus:        "FAILED",
 	}
 
 	// Set up expected event for failure scenario.
@@ -106,7 +106,7 @@ func TestExecResolveIncidentAction(t *testing.T) {
 		IncidentSource:   "Test source",
 		DedupKey:         "testDedupKey",
 		ResolveIncident:  true,
-		JobStatus:        "success",
+		JobStatus:        "SUCCESS",
 		IncidentSeverity: "info",
 	}
 
@@ -133,7 +133,7 @@ func TestExecMissingRoutingKey(t *testing.T) {
 		IncidentSource:   "Test source",
 		IncidentSeverity: "critical",
 		DedupKey:         "testDedupKey",
-		JobStatus:        "failed",
+		JobStatus:        "FAILED",
 	}
 
 	err := Exec(ctx, mockClient, args)
@@ -150,7 +150,7 @@ func TestExecAPICallFailure(t *testing.T) {
 		IncidentSource:   "Test source",
 		IncidentSeverity: "critical",
 		DedupKey:         "testDedupKey",
-		JobStatus:        "failed",
+		JobStatus:        "FAILED",
 		ResolveIncident:  bool(false),
 	}
 
@@ -205,7 +205,7 @@ func TestExecInvalidSeverity(t *testing.T) {
 		IncidentSource:   "Test source",
 		IncidentSeverity: "invalid-severity",
 		DedupKey:         "testDedupKey",
-		JobStatus:        "failed",
+		JobStatus:        "FAILED",
 	}
 
 	err := Exec(ctx, mockClient, args)
