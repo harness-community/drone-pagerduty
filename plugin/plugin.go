@@ -106,23 +106,23 @@ func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 	var summary = args.IncidentSummary
 
 	switch args.JobStatus {
-	case "success":
+	case "SUCCESS":
 		resolveIncident = args.ResolveIncident || bool(true)
 		summary = "Job succeeded: " + summary
 		logger.Info("Job succeeded, deciding on resolving incident")
-	case "failed":
+	case "FAILED":
 		resolveIncident = args.ResolveIncident
 		summary = "Job failed: " + summary
 		logger.Info("Job failed, deciding on triggering or resolving incident")
-	case "running":
+	case "RUNNING":
 		resolveIncident = args.ResolveIncident || bool(true)
 		summary = "Job is unstable: " + summary
 		logger.Info("Job is running, deciding on triggering or resolving incident")
-	case "aborted":
+	case "ABORTED":
 		resolveIncident = args.ResolveIncident
 		summary = "Job was aborted: " + summary
 		logger.Info("Job was aborted, deciding on triggering or resolving incident")
-	case "expired":
+	case "EXPIRED":
 		resolveIncident = args.ResolveIncident
 		summary = "Job was aborted: " + summary
 		logger.Info("Job was expired, deciding on triggering or resolving incident")
