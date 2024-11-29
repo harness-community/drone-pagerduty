@@ -17,7 +17,7 @@ docker build -t plugins/pagerduty -f docker/Dockerfile .
 ## Testing
 
 Execute the plugin from your current working directory:
-
+## Change Event: This plugin logs a system change in PagerDuty (e.g., deployments or updates) without creating an incident, providing additional context with custom details.
 ## Pager Duty change event Env variables
 ```
 docker run --rm \
@@ -29,8 +29,45 @@ docker run --rm \
   -v $(pwd):$(pwd) \
   plugins/pagerduty
 ```
+## Example Harness Step:
+```
+- step:
+    identifier: pagerdutychangeevent499434
+    name: Pagerduty_Change_Event
+    spec:
+      image: plugins/pagerduty
+      settings:
+        custom_details: '{"buildNumber":"22","jobName":"test-pager-duty","jobURL":"http://localhost:8080/job/test-pager-duty/22/"}'
+        incident_source: ''
+        incident_summary: Job test-pager-duty completed with status SUCCESS
+        log_level: debug
+        routing_key: a666ad1326f34605d06c0dbd4d87c1cb
+        create_change_event: "true"
+    timeout: ''
+    type: Plugin
+```
 
+## Pager Duty Trigger Incident: This plugin creates or resolves an incident in PagerDuty based on job status.
 ## Pager Duty Env variables
+## Example Harness Step:
+```
+- step:
+    identifier: pagerduty51d22b
+    name: Pagerduty
+    spec:
+      image: plugins/pagerduty
+      settings:
+        dedup_key: E54EC853A59A3815EF3632D5F854CF26
+        incident_severity: critical
+        incident_source: test-pager-duty
+        incident_summary: Build Failed for test-pager-duty
+        job_status: FAILED
+        log_level: debug
+        resolve: 'false'
+        routing_key: a666ad1326f34605d06c0dbd4d87c1cb
+    timeout: ''
+    type: Plugin
+```
 ```
 docker run --rm \
   -e PLUGIN_ROUTING_KEY="your_routing_key_here" \
@@ -55,5 +92,5 @@ docker run --rm \
 - PLUGIN_DEDUP_KEY: Deduplication key for identifying and resolving incidents (optional).
 - PLUGIN_RESOLVE_INCIDENT: Set to true to resolve an incident or false to trigger.
 - PLUGIN_CREATE_CHANGE_EVENT: Set to true to create a change event.
-- PLUGIN_JOB_STATUS: The job status is the condition of the job (success | failure | unstable | aborted)
+- PLUGIN_JOB_STATUS: The job status is the condition of the job (SUCCESS | FAILED | RUNNING | ABORTED | EXPIRED)
 	
