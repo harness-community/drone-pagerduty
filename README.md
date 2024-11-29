@@ -38,7 +38,7 @@ docker run --rm \
   -e PLUGIN_INCIDENT_SOURCE="Incident source here" \
   -e PLUGIN_INCIDENT_SEVERITY="info" \
   -e PLUGIN_DEDUP_KEY="your_dedup_key_here" \
-  -e PLUGIN_RESOLVE=true \
+  -e PLUGIN_RESOLVE_INCIDENT=true \
   -e PLUGIN_JOB_STATUS="success" \
   -v $(pwd):$(pwd) \
   plugins/pagerduty
@@ -53,7 +53,7 @@ docker run --rm \
 - PLUGIN_CUSTOM_DETAILS: Provide custom details for change event
 - PLUGIN_INCIDENT_SEVERITY: Severity level specifies the severity level of the incident, e.g., 'critical', 'error', 'warning', 'info', 'unknown'.
 - PLUGIN_DEDUP_KEY: Deduplication key for identifying and resolving incidents (optional).
-- PLUGIN_RESOLVE: Set to true to resolve an incident or false to trigger.
+- PLUGIN_RESOLVE_INCIDENT: Set to true to resolve an incident or false to trigger.
 - PLUGIN_CREATE_CHANGE_EVENT: Set to true to create a change event.
 - PLUGIN_JOB_STATUS: The job status is the condition of the job (success | failure | unstable | aborted)
 	
