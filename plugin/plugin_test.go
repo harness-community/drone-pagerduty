@@ -43,7 +43,7 @@ func TestExec(t *testing.T) {
 		IncidentSource:   "Test source",
 		IncidentSeverity: "critical",
 		DedupKey:         "testDedupKey",
-		JobStatus:        "failure",
+		JobStatus:        "failed",
 	}
 
 	// Set up expected event for failure scenario.
@@ -150,7 +150,7 @@ func TestExecAPICallFailure(t *testing.T) {
 		IncidentSource:   "Test source",
 		IncidentSeverity: "critical",
 		DedupKey:         "testDedupKey",
-		JobStatus:        "failure",
+		JobStatus:        "failed",
 	}
 
 	// Set up expected event for failure scenario.
@@ -204,7 +204,7 @@ func TestExecInvalidSeverity(t *testing.T) {
 		IncidentSource:   "Test source",
 		IncidentSeverity: "invalid-severity",
 		DedupKey:         "testDedupKey",
-		JobStatus:        "failure",
+		JobStatus:        "failed",
 	}
 
 	err := Exec(ctx, mockClient, args)
