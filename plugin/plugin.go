@@ -26,7 +26,7 @@ type Args struct {
 	IncidentSeverity  string `envconfig:"PLUGIN_INCIDENT_SEVERITY"`
 	DedupKey          string `envconfig:"PLUGIN_DEDUP_KEY"`
 	CreateChangeEvent bool   `envconfig:"PLUGIN_CREATE_CHANGE_EVENT"`
-	Resolve           bool   `envconfig:"PLUGIN_RESOLVE"`
+	ResolveIncident   bool   `envconfig:"PLUGIN_RESOLVE_INCIDENT"`
 	JobStatus         string `envconfig:"PLUGIN_JOB_STATUS"`
 	CustomDetailsStr  string `envconfig:"PLUGIN_CUSTOM_DETAILS"` // Intermediate string to receive JSON
 	CustomDetails     map[string]interface{}
@@ -51,7 +51,7 @@ func validateSeverity(severity string) error {
 // Exec executes the plugin.
 func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 	logger := logrus.WithFields(logrus.Fields{
-		"PLUGIN_ROUTING_KEY":         args.RoutingKey,
+		"PLUGIN_ROUTING_KEY":         string("XXXXXXXXXXXXXXXXXXXXXXXX"),
 		"PLUGIN_INCIDENT_SUMMARY":    args.IncidentSummary,
 		"PLUGIN_INCIDENT_SOURCE":     args.IncidentSource,
 		"PLUGIN_INCIDENT_SEVERITY":   args.IncidentSeverity,
@@ -107,27 +107,28 @@ func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 
 	switch args.JobStatus {
 	case "success":
-		resolveIncident = args.Resolve
+		resolveIncident = args.ResolveIncident || bool(true)
 		summary = "Job succeeded: " + summary
 		logger.Info("Job succeeded, deciding on resolving incident")
 	case "failed":
-		resolveIncident = false
+		resolveIncident = args.ResolveIncident
 		summary = "Job failed: " + summary
 		logger.Info("Job failed, deciding on triggering or resolving incident")
 	case "running":
-		resolveIncident = false
+		resolveIncident = args.ResolveIncident || bool(true)
 		summary = "Job is unstable: " + summary
 		logger.Info("Job is running, deciding on triggering or resolving incident")
 	case "aborted":
-		resolveIncident = false
+		resolveIncident = args.ResolveIncident
 		summary = "Job was aborted: " + summary
 		logger.Info("Job was aborted, deciding on triggering or resolving incident")
 	case "expired":
-		resolveIncident = false
+		resolveIncident = args.ResolveIncident
 		summary = "Job was aborted: " + summary
 		logger.Info("Job was expired, deciding on triggering or resolving incident")
 	default:
 		summary = "Job status unknown: " + summary
+		resolveIncident = bool(false) // Unknown status, do not resolve by default
 		logger.Warn("Unknown job status, no action taken")
 		return nil
 	}

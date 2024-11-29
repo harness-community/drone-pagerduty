@@ -105,7 +105,7 @@ func TestExecResolveIncidentAction(t *testing.T) {
 		IncidentSummary:  "Test resolve summary",
 		IncidentSource:   "Test source",
 		DedupKey:         "testDedupKey",
-		Resolve:          true,
+		ResolveIncident:  true,
 		JobStatus:        "success",
 		IncidentSeverity: "info",
 	}
@@ -151,6 +151,7 @@ func TestExecAPICallFailure(t *testing.T) {
 		IncidentSeverity: "critical",
 		DedupKey:         "testDedupKey",
 		JobStatus:        "failed",
+		ResolveIncident:  bool(false),
 	}
 
 	// Set up expected event for failure scenario.
