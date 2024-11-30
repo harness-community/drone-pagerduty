@@ -21,6 +21,7 @@ const (
 type Args struct {
 	Level             string `envconfig:"PLUGIN_LOG_LEVEL"`
 	RoutingKey        string `envconfig:"PLUGIN_ROUTING_KEY"`
+	IntegrationKey    string `envconfig:"PLUGIN_INTEGRATION_KEY"`
 	IncidentSummary   string `envconfig:"PLUGIN_INCIDENT_SUMMARY"`
 	IncidentSource    string `envconfig:"PLUGIN_INCIDENT_SOURCE"`
 	IncidentSeverity  string `envconfig:"PLUGIN_INCIDENT_SEVERITY"`
@@ -62,11 +63,14 @@ func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 	logger.Info("Starting plugin execution")
 
 	// Validate required fields
-	if args.RoutingKey == "" {
-		return errors.New("missing required parameter: routingKey")
+	if args.CreateChangeEvent && args.IntegrationKey == "" {
+		return errors.New("missing required parameter: integrationKey")
 	}
 
 	if !args.CreateChangeEvent {
+		if args.RoutingKey == "" {
+			return errors.New("missing required parameter: routingKey")
+		}
 		if args.DedupKey == "" {
 			return errors.New("missing required parameter: dedupKey when not creating a change event")
 		}
@@ -200,7 +204,7 @@ func createChangeEvent(ctx context.Context, client PagerDutyClient, args Args) e
 	}
 
 	event := pagerduty.ChangeEvent{
-		RoutingKey: args.RoutingKey,
+		RoutingKey: args.IntegrationKey,
 		Payload: pagerduty.ChangeEventPayload{
 			Summary:       args.IncidentSummary,
 			Source:        args.IncidentSource,

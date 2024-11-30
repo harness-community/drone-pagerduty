@@ -84,6 +84,7 @@ docker run --rm \
 ## Plugin Settings
 - `LOG_LEVEL` debug/info Level defines the plugin log level. Set this to debug to see the response from PagerDuty
 - PLUGIN_ROUTING_KEY: The integration key for PagerDuty to route the event.
+- PLUGIN_INTEGRATION_KEY: The integration key for PagerDuty to route the event.
 - PLUGIN_INCIDENT_SUMMARY: A summary of the incident being triggered.
 - PLUGIN_INCIDENT_SOURCE: The source of the incident.
 - PLUGIN_CREATE_CHANGE_EVENT: set to true to create change event

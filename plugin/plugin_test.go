@@ -70,7 +70,7 @@ func TestExecCreateChangeEvent(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
 	ctx := context.Background()
 	args := Args{
-		RoutingKey:        "testRoutingKey",
+		IntegrationKey:    "testRoutingKey",
 		IncidentSummary:   "Test change event summary",
 		IncidentSource:    "Test source",
 		CreateChangeEvent: true,
@@ -80,7 +80,7 @@ func TestExecCreateChangeEvent(t *testing.T) {
 	// Define mock expectations
 	mockClient.On("CreateChangeEventWithContext", mock.Anything, mock.MatchedBy(func(event pagerduty.ChangeEvent) bool {
 		// Ensure fields match
-		return event.RoutingKey == args.RoutingKey &&
+		return event.RoutingKey == args.IntegrationKey &&
 			event.Payload.Summary == args.IncidentSummary &&
 			event.Payload.Source == args.IncidentSource &&
 			len(event.Payload.CustomDetails) == 1 // Check key-value pairs
@@ -140,6 +140,22 @@ func TestExecMissingRoutingKey(t *testing.T) {
 	require.EqualError(t, err, "missing required parameter: routingKey")
 }
 
+func TestExecMissingIntegrationKey(t *testing.T) {
+	mockClient := new(MockPagerDutyClient)
+	ctx := context.Background()
+	args := Args{
+		IncidentSummary:   "Test incident summary",
+		IncidentSource:    "Test source",
+		IncidentSeverity:  "critical",
+		DedupKey:          "testDedupKey",
+		JobStatus:         "FAILED",
+		CreateChangeEvent: true,
+	}
+
+	err := Exec(ctx, mockClient, args)
+	require.EqualError(t, err, "missing required parameter: integrationKey")
+}
+
 // TestExecAPICallFailure tests the Exec function with an API call failure.
 func TestExecAPICallFailure(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
@@ -178,7 +194,7 @@ func TestExecInvalidCustomDetails(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
 	ctx := context.Background()
 	args := Args{
-		RoutingKey:        "testRoutingKey",
+		IntegrationKey:    "testRoutingKey",
 		IncidentSummary:   "Test change event summary",
 		IncidentSource:    "Test source",
 		CreateChangeEvent: true,
