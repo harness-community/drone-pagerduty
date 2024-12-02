@@ -21,7 +21,6 @@ const (
 type Args struct {
 	Level             string `envconfig:"PLUGIN_LOG_LEVEL"`
 	RoutingKey        string `envconfig:"PLUGIN_ROUTING_KEY"`
-	IntegrationKey    string `envconfig:"PLUGIN_INTEGRATION_KEY"`
 	IncidentSummary   string `envconfig:"PLUGIN_INCIDENT_SUMMARY"`
 	IncidentSource    string `envconfig:"PLUGIN_INCIDENT_SOURCE"`
 	IncidentSeverity  string `envconfig:"PLUGIN_INCIDENT_SEVERITY"`
@@ -52,25 +51,21 @@ func validateSeverity(severity string) error {
 // Exec executes the plugin.
 func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 	logger := logrus.WithFields(logrus.Fields{
-		"PLUGIN_ROUTING_KEY/PLUGIN_INTEGRATION_KEY": string("XXXXXXXXXXXXXXXXXXXXXXXX"),
-		"PLUGIN_INCIDENT_SUMMARY":                   args.IncidentSummary,
-		"PLUGIN_INCIDENT_SOURCE":                    args.IncidentSource,
-		"PLUGIN_INCIDENT_SEVERITY":                  args.IncidentSeverity,
-		"PLUGIN_CREATE_CHANGE_EVENT":                args.CreateChangeEvent,
-		"PLUGIN_JOB_STATUS":                         args.JobStatus,
+		"PLUGIN_ROUTING_KEY":         string("XXXXXXXXXXXXXXXXXXXXXXXX"),
+		"PLUGIN_INCIDENT_SUMMARY":    args.IncidentSummary,
+		"PLUGIN_INCIDENT_SOURCE":     args.IncidentSource,
+		"PLUGIN_INCIDENT_SEVERITY":   args.IncidentSeverity,
+		"PLUGIN_CREATE_CHANGE_EVENT": args.CreateChangeEvent,
+		"PLUGIN_JOB_STATUS":          args.JobStatus,
 	})
 
 	logger.Info("Starting plugin execution")
 
-	// Validate required fields
-	if args.CreateChangeEvent && args.IntegrationKey == "" {
-		return errors.New("missing required parameter: integrationKey")
+	if args.RoutingKey == "" {
+		return errors.New("missing required parameter: routingKey")
 	}
 
 	if !args.CreateChangeEvent {
-		if args.RoutingKey == "" {
-			return errors.New("missing required parameter: routingKey")
-		}
 		if args.DedupKey == "" {
 			return errors.New("missing required parameter: dedupKey when not creating a change event")
 		}
@@ -204,7 +199,7 @@ func createChangeEvent(ctx context.Context, client PagerDutyClient, args Args) e
 	}
 
 	event := pagerduty.ChangeEvent{
-		RoutingKey: args.IntegrationKey,
+		RoutingKey: args.RoutingKey,
 		Payload: pagerduty.ChangeEventPayload{
 			Summary:       args.IncidentSummary,
 			Source:        args.IncidentSource,

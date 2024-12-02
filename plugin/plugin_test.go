@@ -70,7 +70,7 @@ func TestExecCreateChangeEvent(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
 	ctx := context.Background()
 	args := Args{
-		IntegrationKey:    "testRoutingKey",
+		RoutingKey:        "testRoutingKey",
 		IncidentSummary:   "Test change event summary",
 		IncidentSource:    "Test source",
 		CreateChangeEvent: true,
@@ -80,7 +80,7 @@ func TestExecCreateChangeEvent(t *testing.T) {
 	// Define mock expectations
 	mockClient.On("CreateChangeEventWithContext", mock.Anything, mock.MatchedBy(func(event pagerduty.ChangeEvent) bool {
 		// Ensure fields match
-		return event.RoutingKey == args.IntegrationKey &&
+		return event.RoutingKey == args.RoutingKey &&
 			event.Payload.Summary == args.IncidentSummary &&
 			event.Payload.Source == args.IncidentSource &&
 			len(event.Payload.CustomDetails) == 1 // Check key-value pairs
@@ -124,23 +124,7 @@ func TestExecResolveIncidentAction(t *testing.T) {
 	mockClient.AssertExpectations(t)
 }
 
-// TestExecMissingRoutingKey tests the Exec function with a missing RoutingKey.
 func TestExecMissingRoutingKey(t *testing.T) {
-	mockClient := new(MockPagerDutyClient)
-	ctx := context.Background()
-	args := Args{
-		IncidentSummary:  "Test incident summary",
-		IncidentSource:   "Test source",
-		IncidentSeverity: "critical",
-		DedupKey:         "testDedupKey",
-		JobStatus:        "FAILED",
-	}
-
-	err := Exec(ctx, mockClient, args)
-	require.EqualError(t, err, "missing required parameter: routingKey")
-}
-
-func TestExecMissingIntegrationKey(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
 	ctx := context.Background()
 	args := Args{
@@ -153,7 +137,7 @@ func TestExecMissingIntegrationKey(t *testing.T) {
 	}
 
 	err := Exec(ctx, mockClient, args)
-	require.EqualError(t, err, "missing required parameter: integrationKey")
+	require.EqualError(t, err, "missing required parameter: routingKey")
 }
 
 // TestExecAPICallFailure tests the Exec function with an API call failure.
@@ -194,7 +178,7 @@ func TestExecInvalidCustomDetails(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
 	ctx := context.Background()
 	args := Args{
-		IntegrationKey:    "testIntegrationKey",
+		RoutingKey:        "testRoutingKey",
 		IncidentSummary:   "Test change event summary",
 		IncidentSource:    "Test source",
 		CreateChangeEvent: true,
