@@ -52,12 +52,12 @@ func validateSeverity(severity string) error {
 // Exec executes the plugin.
 func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 	logger := logrus.WithFields(logrus.Fields{
-		"PLUGIN_ROUTING_KEY":         string("XXXXXXXXXXXXXXXXXXXXXXXX"),
-		"PLUGIN_INCIDENT_SUMMARY":    args.IncidentSummary,
-		"PLUGIN_INCIDENT_SOURCE":     args.IncidentSource,
-		"PLUGIN_INCIDENT_SEVERITY":   args.IncidentSeverity,
-		"PLUGIN_CREATE_CHANGE_EVENT": args.CreateChangeEvent,
-		"PLUGIN_JOB_STATUS":          args.JobStatus,
+		"PLUGIN_ROUTING_KEY/PLUGIN_INTEGRATION_KEY": string("XXXXXXXXXXXXXXXXXXXXXXXX"),
+		"PLUGIN_INCIDENT_SUMMARY":                   args.IncidentSummary,
+		"PLUGIN_INCIDENT_SOURCE":                    args.IncidentSource,
+		"PLUGIN_INCIDENT_SEVERITY":                  args.IncidentSeverity,
+		"PLUGIN_CREATE_CHANGE_EVENT":                args.CreateChangeEvent,
+		"PLUGIN_JOB_STATUS":                         args.JobStatus,
 	})
 
 	logger.Info("Starting plugin execution")

@@ -194,7 +194,7 @@ func TestExecInvalidCustomDetails(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
 	ctx := context.Background()
 	args := Args{
-		IntegrationKey:    "testRoutingKey",
+		IntegrationKey:    "testIntegrationKey",
 		IncidentSummary:   "Test change event summary",
 		IncidentSource:    "Test source",
 		CreateChangeEvent: true,
