@@ -61,22 +61,22 @@ func Exec(ctx context.Context, client PagerDutyClient, args Args) error {
 
 	logger.Info("Starting plugin execution")
 
-	// Validate required fields
 	if args.RoutingKey == "" {
 		return errors.New("missing required parameter: routingKey")
 	}
-	if args.IncidentSummary == "" {
-		return errors.New("missing required parameter: incidentSummary")
-	}
-	if args.IncidentSource == "" {
-		return errors.New("missing required parameter: incidentSource")
-	}
+
 	if !args.CreateChangeEvent {
 		if args.DedupKey == "" {
 			return errors.New("missing required parameter: dedupKey when not creating a change event")
 		}
 		if args.JobStatus == "" {
 			return errors.New("missing required parameter: jobStatus when not creating a change event")
+		}
+		if args.IncidentSummary == "" {
+			return errors.New("missing required parameter: incidentSummary")
+		}
+		if args.IncidentSource == "" {
+			return errors.New("missing required parameter: incidentSource")
 		}
 	}
 

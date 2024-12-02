@@ -124,16 +124,16 @@ func TestExecResolveIncidentAction(t *testing.T) {
 	mockClient.AssertExpectations(t)
 }
 
-// TestExecMissingRoutingKey tests the Exec function with a missing RoutingKey.
 func TestExecMissingRoutingKey(t *testing.T) {
 	mockClient := new(MockPagerDutyClient)
 	ctx := context.Background()
 	args := Args{
-		IncidentSummary:  "Test incident summary",
-		IncidentSource:   "Test source",
-		IncidentSeverity: "critical",
-		DedupKey:         "testDedupKey",
-		JobStatus:        "FAILED",
+		IncidentSummary:   "Test incident summary",
+		IncidentSource:    "Test source",
+		IncidentSeverity:  "critical",
+		DedupKey:          "testDedupKey",
+		JobStatus:         "FAILED",
+		CreateChangeEvent: true,
 	}
 
 	err := Exec(ctx, mockClient, args)
